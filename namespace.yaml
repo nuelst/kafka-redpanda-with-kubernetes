@@ -1,0 +1,10 @@
+# namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: redpanda
+  labels:
+    name: redpanda
+
+
+# Serve para isolar todos os recursos (pods, services, configmaps, PVCs) do cluster Redpanda dentro deste espaço lógico.

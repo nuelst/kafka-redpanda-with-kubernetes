@@ -1,0 +1,86 @@
+# redpanda-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redpanda
+  namespace: redpanda
+spec:
+  serviceName: redpanda
+  replicas: 3 #podemos aumentar as replicas para escalar horizontalmente
+  selector:
+    matchLabels:
+      app: redpanda
+  template:
+    metadata:
+      labels:
+        app: redpanda
+    spec:
+      containers:
+      - name: redpanda
+        image: redpandadata/redpanda:v25.2.9
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+          ORD=${HOSTNAME##*-}
+          DNS="redpanda-$ORD.redpanda.redpanda.svc.cluster.local"
+          echo "Starting Redpanda..."
+          exec /usr/bin/rpk redpanda start \
+            --kafka-addr PLAINTEXT://0.0.0.0:9092 \
+            --advertise-kafka-addr PLAINTEXT://redpanda-0.redpanda.redpanda.svc.cluster.local:9092 \
+            --rpc-addr 0.0.0.0:33145 \
+            --advertise-rpc-addr redpanda-0.redpanda.redpanda.svc.cluster.local:33145 \
+            --node-id 0 \
+            --smp 1 \
+            --memory 512M \
+            --reserve-memory 0M \
+            --overprovisioned \
+            --check=false
+        env:
+        - name: REDPANDA_ENVIRONMENT
+          value: "kubernetes"
+        ports:
+        - containerPort: 9092
+          name: kafka
+        - containerPort: 33145
+          name: rpc
+        - containerPort: 9644
+          name: admin
+        livenessProbe:
+          httpGet:
+            path: /v1/status/ready
+            port: 9644
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /v1/status/ready
+            port: 9644
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/redpanda/data
+      terminationGracePeriodSeconds: 30
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ] #Esses modos determinam quantos pods podem usar o volume ao mesmo tempo e de onde (nó/localização).
+      resources:
+        requests:
+          storage: 5Gi
+
+
+
+

@@ -1,0 +1,38 @@
+# redpanda-services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: redpanda
+  namespace: redpanda
+  labels:
+    app: redpanda
+spec:
+  clusterIP: None
+  ports:
+  - port: 9092
+    name: kafka
+  - port: 33145
+    name: rpc
+  - port: 9644
+    name: admin
+  selector:
+    app: redpanda
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redpanda-external
+  namespace: redpanda
+spec:
+  type: NodePort
+  selector:
+    app: redpanda
+  ports:
+  - name: kafka
+    port: 9092
+    targetPort: 9092   # << era 9092
+    nodePort: 30000
+  - name: admin
+    port: 9644
+    targetPort: 9644
+    nodePort: 30001
