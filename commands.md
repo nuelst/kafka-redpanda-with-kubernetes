@@ -219,3 +219,11 @@ kubectl get pvc -n redpanda
 
 No teu cluster kind, os três pods do Redpanda (redpanda-0, -1, -2) são distribuídos automaticamente pelos três nodes (control-plane, worker1 e worker2).
 Cada um roda o seu container Redpanda e usa o seu próprio disco (PVC) local.
+
+
+
+# criar um tópico com 12 partições e fator de replicação 3
+rpk topic create pedidos --partitions 12 --replication 3
+
+# aumentar o número de partições (ex.: de 12 para 24)
+rpk topic alter-config pedidos --set partition_count=24
